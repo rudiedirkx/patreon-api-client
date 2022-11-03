@@ -8,11 +8,18 @@ class Creator {
 		public string $id,
 		public string $name,
 		public string $url,
-		public string $creation,
+		public ?string $currency = null,
+		public ?string $creation = null,
+		public ?string $campaignId = null,
 	) {}
 
-	static public function fromUserAndCampaign(array $user, array $campaign) {
-		return new self($user['id'], $user['attributes']['full_name'], $user['attributes']['url'], $campaign['attributes']['creation_name']);
+	static public function fromUserAndCampaign(array $user, array $campaign) : self {
+		return new self(
+			$user['id'], $user['attributes']['full_name'], $user['attributes']['url'],
+			currency: $campaign['attributes']['currency'],
+			creation: $campaign['attributes']['creation_name'],
+			campaignId: $campaign['id'],
+		);
 	}
 
 }

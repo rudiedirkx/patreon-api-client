@@ -9,7 +9,7 @@ class Follow {
 		public int $since,
 	) {}
 
-	static public function fromCreatorAndFollow(Creator $creator, array $follow) {
+	static public function fromCreatorAndFollow(Creator $creator, array $follow) : self {
 		return new self($creator, strtotime($follow['attributes']['created_at']));
 	}
 
