@@ -5,13 +5,14 @@ namespace rdx\patreon;
 use GuzzleHttp\Client as Guzzle;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\RedirectMiddleware;
+use RuntimeException;
 use rdx\jsdom\Node;
 
 class Client {
 
 	static public $fetchFields = [
 		'user' => 'full_name,vanity,url',
-		'campaign' => 'creation_name,pay_per_name,currency',
+		'campaign' => 'creation_name,pay_per_name,currency,patron_count,campaign_pledge_sum,published_at',
 		'bill' => 'amount_cents,created_at,currency',
 		'pledge' => 'amount_cents,created_at',
 		'follow' => 'created_at',
@@ -25,7 +26,10 @@ class Client {
 	public ?string $accountEmail = null;
 	public ?string $accountCurrency = null;
 
+	protected ?string $csrfToken = null;
+
 	public array $creators = [];
+	public array $billableYears = [];
 
 	public function __construct(Auth $auth) {
 		$this->auth = $auth;
@@ -37,6 +41,47 @@ class Client {
 				'track_redirects' => true,
 			] + RedirectMiddleware::$defaultSettings,
 		]);
+	}
+
+	public function follow(Creator $creator) : Follow {
+		$rsp = $this->post('https://www.patreon.com/api/follow?include=campaign.current_user_follow.null&fields[campaign]=id&fields[follow]=' . self::$fetchFields['follow'] . '&json-api-use-default-includes=false&json-api-version=1.0', [
+			'data' => [
+				'type' => 'follow',
+				'attributes' => (object) [],
+				'relationships' => [
+					'follower' => [
+						'data' => [
+							'type' => 'user',
+							'id' => $this->accountId,
+						],
+					],
+					'campaign' => [
+						'data' => [
+							'type' => 'campaign',
+							'id' => $creator->campaignId,
+						],
+					],
+				],
+			],
+		]);
+		$json = (string) $rsp->getBody();
+		$data = json_decode($json, true);
+// print_r($data);
+
+		if (!empty($data['errors'])) {
+			throw new RuntimeException($data['errors'][0]['detail']);
+		}
+
+		return Follow::fromCreatorAndFollow($creator, $data['data']);
+	}
+
+	public function unfollow(Follow $follow) : void {
+		$rsp = $this->delete("https://www.patreon.com/api/follow/$follow->id");
+		$json = (string) $rsp->getBody();
+
+		if (!empty($data['errors'])) {
+			throw new RuntimeException($data['errors'][0]['detail']);
+		}
 	}
 
 	public function getFollows() : array {
@@ -110,6 +155,8 @@ class Client {
 			'json-api-version' => '1.0',
 		]);
 
+		$this->billableYears = $data['meta']['years'];
+
 		$map = $this->mapIncluded($data['included']);
 		$this->persistCreatorsFromMappedCampaigns($map);
 
@@ -167,15 +214,30 @@ class Client {
 	}
 
 	protected function persistCreator(Creator $creator) : void {
-		$this->creators[$creator->id] = $creator;
+		if (!isset($this->creators[$creator->id])) {
+			$this->creators[$creator->id] = $creator;
+		}
 	}
 
 	public function logIn() : bool {
 		return $this->auth->logIn($this) && $this->checkSession();
 	}
 
+	public function ensureCsrfToken() : string {
+		if ($this->csrfToken) return $this->csrfToken;
+
+		$rsp = $this->get('https://www.patreon.com/fdgfg5553fss' . rand() . '/creators');
+		$html = (string) $rsp->getBody();
+
+		if (!preg_match('#patreon\.csrfSignature\s*=\s*["\'](.+?)["\']#', $html, $match)) {
+			throw new CantFindCsrfTokenException("patreon.csrfSignature");
+		}
+
+		return $this->csrfToken = $match[1];
+	}
+
 	protected function checkSession() : bool {
-		$rsp = $this->guzzle->get('https://www.patreon.com/api/current_user?json-api-version=1.0');
+		$rsp = $this->get('https://www.patreon.com/api/current_user?json-api-version=1.0');
 
 		if ($rsp->getStatusCode() != 200) {
 			return false;
@@ -208,8 +270,32 @@ class Client {
 
 	protected function get(string $url) : Response {
 // echo "$url\n";
-		$this->_requests[] = $url;
+		$this->_requests[] = "GET $url";
 		return $this->guzzle->get($url);
+	}
+
+	protected function post(string $url, array $data) : Response {
+		$csrfToken = $this->ensureCsrfToken();
+// echo "$url\n";
+		$this->_requests[] = "POST $url";
+		return $this->guzzle->post($url, [
+			'body' => json_encode($data),
+			'headers' => [
+				'Content-type' => 'application/vnd.api+json',
+				'x-csrf-signature' => $csrfToken,
+			],
+		]);
+	}
+
+	protected function delete(string $url) : Response {
+		$csrfToken = $this->ensureCsrfToken();
+// echo "$url\n";
+		$this->_requests[] = "DELETE $url";
+		return $this->guzzle->delete($url, [
+			'headers' => [
+				'x-csrf-signature' => $csrfToken,
+			],
+		]);
 	}
 
 }
