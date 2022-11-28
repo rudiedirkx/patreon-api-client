@@ -237,7 +237,7 @@ class Client {
 	}
 
 	protected function checkSession() : bool {
-		$rsp = $this->get('https://www.patreon.com/api/current_user?json-api-version=1.0');
+		$rsp = $this->get('https://www.patreon.com/api/current_user?fields[user]=email,patron_currency&json-api-version=1.0');
 
 		if ($rsp->getStatusCode() != 200) {
 			return false;
