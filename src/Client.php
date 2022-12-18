@@ -12,7 +12,7 @@ class Client {
 
 	static public $fetchFields = [
 		'user' => 'full_name,vanity,url',
-		'campaign' => 'creation_name,pay_per_name,currency,patron_count,campaign_pledge_sum,published_at',
+		'campaign' => 'name,creation_name,pay_per_name,currency,patron_count,campaign_pledge_sum,published_at',
 		'bill' => 'amount_cents,created_at,currency',
 		'pledge' => 'amount_cents,created_at',
 		'follow' => 'created_at',
@@ -104,7 +104,7 @@ class Client {
 			$rel = $follow['relationships']['followed']['data'];
 			if ($rel['type'] == 'user' && isset($this->creators[ $rel['id'] ])) {
 				$follow = Follow::fromCreatorAndFollow($this->creators[ $rel['id'] ], $follow);
-				$follows[$follow->creator->id] = $follow;
+				$follows[$follow->creator->creatorId] = $follow;
 			}
 		}
 
@@ -131,7 +131,7 @@ class Client {
 			$rel = $pledge['relationships']['creator']['data'];
 			if ($rel['type'] == 'user' && isset($this->creators[ $rel['id'] ])) {
 				$pledge = Pledge::fromCreatorAndPledge($this->creators[ $rel['id'] ], $pledge);
-				$pledges[$pledge->creator->id] = $pledge;
+				$pledges[$pledge->creator->creatorId] = $pledge;
 			}
 		}
 
@@ -214,8 +214,8 @@ class Client {
 	}
 
 	protected function persistCreator(Creator $creator) : void {
-		if (!isset($this->creators[$creator->id])) {
-			$this->creators[$creator->id] = $creator;
+		if (!isset($this->creators[$creator->creatorId])) {
+			$this->creators[$creator->creatorId] = $creator;
 		}
 	}
 

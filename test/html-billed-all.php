@@ -28,10 +28,10 @@ usort($allBills, fn($a, $b) => $b->time <=> $a->time);
 	</thead>
 	<tbody>
 		<? foreach ($allBills as $bill): ?>
-			<tr data-creator="<?= $bill->creator->id ?>" data-amount="<?= number_format($bill->amount, 2) ?>">
+			<tr data-creator="<?= $bill->creator->creatorId ?>" data-amount="<?= number_format($bill->amount, 2) ?>">
 				<td><?= date('Y-m-d', $bill->time) ?></td>
 				<td><a href="#" class="filter-on-creator">&#128269;</a></td>
-				<td><?= html($bill->creator->name) ?></td>
+				<td><?= html($bill->creator->campaignName) ?></td>
 				<td><a href="<?= html($bill->creator->url) ?>" target="_blank">&#10132;</a></td>
 				<td><?= html($bill->creator->creation) ?></td>
 				<td align="right"><?= $bill->currency ?> <?= number_format($bill->amount, 2) ?></td>

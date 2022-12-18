@@ -5,9 +5,10 @@ namespace rdx\patreon;
 class Creator {
 
 	public function __construct(
-		public string $id,
+		public string $creatorId,
 		public string $campaignId,
-		public string $name,
+		public string $creatorName,
+		public string $campaignName,
 		public string $url,
 		public ?string $vanity,
 		public ?bool $active = null,
@@ -23,6 +24,7 @@ class Creator {
 			$user['id'],
 			$campaign['id'],
 			$user['attributes']['full_name'],
+			$campaign['attributes']['name'],
 			$user['attributes']['url'],
 			$user['attributes']['vanity'],
 			active: $campaign['attributes']['published_at'] != null,
