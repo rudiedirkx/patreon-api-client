@@ -4,6 +4,8 @@ require 'inc.bootstrap.php';
 
 $fnftPatreons = FNFT_PATREON_API_URL ? json_decode(file_get_contents(FNFT_PATREON_API_URL), true) : [];
 
+$pledges = $client->getPledges();
+
 $startYear = (int) date('Y');
 $t = microtime(1);
 $allBills = array_values($client->getBills($startYear));
@@ -30,6 +32,13 @@ th, td {
 	border: solid 1px #ccc;
 	border-width: 1px 0;
 }
+
+a.active {
+	color: green;
+}
+a.inactive {
+	color: red;
+}
 </style>
 
 <p>Loading all bills took <?= number_format($t * 1000, 0, '.', '_') ?> ms.</p>
@@ -47,14 +56,21 @@ th, td {
 	<tbody>
 		<? foreach ($allBills as $bill):
 			$vanity = strtolower($bill->creator->vanity ?? sprintf('u:%s', $bill->creator->creatorId));
+			$active = isset($pledges[$bill->creator->creatorId]);
 			?>
 			<tr
 				data-creator="<?= $bill->creator->creatorId ?>"
 				data-month="<?= date('Y-m', $bill->time) ?>"
 				data-amount="<?= number_format($bill->amount, 2) ?>"
 			>
-				<td nowrap><a href="#" data-filter-on="month"><?= date('Y-m', $bill->time) ?></a><?= date('-d', $bill->time) ?></td>
-				<td><a href="#" data-filter-on="creator"><?= html($bill->creator->campaignName) ?></a></td>
+				<td nowrap>
+					<a href="#" data-filter-on="month"><?= date('Y-m', $bill->time) ?></a><?= date('-d', $bill->time) ?>
+				</td>
+				<td>
+					<a href="#" data-filter-on="creator" class="<?= $active ? 'active' : 'inactive' ?>">
+						<?= html($bill->creator->campaignName) ?>
+					</a>
+				</td>
 				<td><a href="<?= html($bill->creator->url) ?>" target="_blank">&#10132;</a></td>
 				<td><?= html(implode(', ', $fnftPatreons[$vanity] ?? []) ?: $bill->creator->creation) ?></td>
 				<td align="right"><?= $bill->currency ?> <?= number_format($bill->amount, 2) ?></td>
@@ -103,3 +119,12 @@ th, td {
 	printTotalAmount();
 })();
 </script>
+
+<hr>
+
+<details>
+	<summary>API requests (<?= count($client->_requests) ?>)</summary>
+	<ul style="font-family: monospace; white-space: nowrap">
+		<li><?= implode('</li><li>', $client->_requests) ?></li>
+	</ul>
+</details>
