@@ -13,7 +13,7 @@ foreach (array_diff($client->billableYears, [$startYear]) as $year) {
 // var_dump(count($allBills));
 echo "Total bills: " . count($allBills) . "\n";
 
-$billCreatorIds = array_values(array_unique(array_map(fn($bill) => $bill->creator->id, $allBills)));
+$billCreatorIds = array_values(array_unique(array_map(fn($bill) => $bill->creator->creatorId, $allBills)));
 // print_r($billCreatorIds);
 echo "Unique creators: " . count($billCreatorIds) . "\n";
 
@@ -21,7 +21,7 @@ $follows = $client->getFollows();
 // var_dump(count($follows));
 echo "Following: " . count($follows) . "\n";
 
-$followingCreatorIds = array_values(array_map(fn($follow) => $follow->creator->id, $follows));
+$followingCreatorIds = array_values(array_map(fn($follow) => $follow->creator->creatorId, $follows));
 $unfollowedCreatorIds = array_diff($billCreatorIds, $followingCreatorIds);
 // print_r($unfollowedCreatorIds);
 echo "Unfollowed: " . count($unfollowedCreatorIds) . "\n";
