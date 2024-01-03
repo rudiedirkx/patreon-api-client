@@ -32,6 +32,9 @@ th, td {
 	border: solid 1px #ccc;
 	border-width: 1px 0;
 }
+.new-month > td {
+	border-top: solid 2px #000;
+}
 
 a.active {
 	color: green;
@@ -54,7 +57,10 @@ a.inactive {
 		</tr>
 	</thead>
 	<tbody>
-		<? foreach ($allBills as $bill):
+		<?
+		$lastMonth = null;
+		foreach ($allBills as $bill):
+			$month = date('Y-m', $bill->time);
 			$vanity = strtolower($bill->creator->vanity ?? sprintf('u:%s', $bill->creator->creatorId));
 			$active = isset($pledges[$bill->creator->creatorId]);
 			?>
@@ -62,9 +68,10 @@ a.inactive {
 				data-creator="<?= $bill->creator->creatorId ?>"
 				data-month="<?= date('Y-m', $bill->time) ?>"
 				data-amount="<?= number_format($bill->amount, 2) ?>"
+				class="<?= $lastMonth && $lastMonth != $month ? 'new-month' : '' ?>"
 			>
 				<td nowrap>
-					<a href="#" data-filter-on="month"><?= date('Y-m', $bill->time) ?></a><?= date('-d', $bill->time) ?>
+					<a href="#" data-filter-on="month"><?= $month ?></a><?= date('-d', $bill->time) ?>
 				</td>
 				<td>
 					<a href="#" data-filter-on="creator" class="<?= $active ? 'active' : 'inactive' ?>">
@@ -75,7 +82,9 @@ a.inactive {
 				<td><?= html(implode(', ', $fnftPatreons[$vanity] ?? []) ?: $bill->creator->creation) ?></td>
 				<td align="right"><?= $bill->currency ?> <?= number_format($bill->amount, 2) ?></td>
 			</tr>
-		<? endforeach ?>
+			<?
+			$lastMonth = $month;
+		endforeach ?>
 	</tbody>
 	<tfoot>
 		<td colspan="4"></td>

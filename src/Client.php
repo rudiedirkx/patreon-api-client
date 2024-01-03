@@ -157,7 +157,7 @@ class Client {
 
 		$this->billableYears = $data['meta']['years'];
 
-		$map = $this->mapIncluded($data['included']);
+		$map = $this->mapIncluded($data['included'] ?? []);
 		$this->persistCreatorsFromMappedCampaigns($map);
 
 		$bills = [];
