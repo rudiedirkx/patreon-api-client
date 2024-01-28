@@ -17,6 +17,12 @@ foreach ($moreYears as $year) {
 $t = microtime(1) - $t;
 usort($allBills, fn($a, $b) => $b->time <=> $a->time);
 
+$activeTotals = [];
+foreach ($allBills as $bill) {
+	$activeTotals[$cid = $bill->creator->creatorId] ??= 0.0;
+	$activeTotals[$cid] += $bill->amount;
+}
+
 ?>
 <title>All bills</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -54,18 +60,21 @@ a.inactive {
 			<th></th>
 			<th></th>
 			<th>Amount</th>
+			<th>Total</th>
 		</tr>
 	</thead>
 	<tbody>
 		<?
+		$seenCids = [];
 		$lastMonth = null;
 		foreach ($allBills as $bill):
+			$cid = $bill->creator->creatorId;
 			$month = date('Y-m', $bill->time);
-			$vanity = strtolower($bill->creator->vanity ?? sprintf('u:%s', $bill->creator->creatorId));
-			$active = isset($pledges[$bill->creator->creatorId]);
+			$vanity = strtolower($bill->creator->vanity ?? sprintf('u:%s', $cid));
+			$active = isset($pledges[$cid]);
 			?>
 			<tr
-				data-creator="<?= $bill->creator->creatorId ?>"
+				data-creator="<?= $cid ?>"
 				data-month="<?= date('Y-m', $bill->time) ?>"
 				data-amount="<?= number_format($bill->amount, 2) ?>"
 				class="<?= $lastMonth && $lastMonth != $month ? 'new-month' : '' ?>"
@@ -81,14 +90,17 @@ a.inactive {
 				<td><a href="<?= html($bill->creator->url) ?>" target="_blank">&#10132;</a></td>
 				<td><?= html(implode(', ', $fnftPatreons[$vanity] ?? []) ?: $bill->creator->creation) ?></td>
 				<td align="right"><?= $bill->currency ?> <?= number_format($bill->amount, 2) ?></td>
+				<td align="right"><?= isset($seenCids[$cid]) ? '' : number_format($activeTotals[$cid] ?? 0, 2) ?></td>
 			</tr>
 			<?
+			$seenCids[$cid] = true;
 			$lastMonth = $month;
 		endforeach ?>
 	</tbody>
 	<tfoot>
 		<td colspan="4"></td>
 		<td align="right"><strong id="total-amount"></strong></td>
+		<td></td>
 	</tfoot>
 </table>
 
