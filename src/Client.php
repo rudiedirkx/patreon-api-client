@@ -190,11 +190,12 @@ class Client {
 	}
 
 	protected function persistCreatorsFromMappedCampaigns(array $map) : void {
-		$creators = array_map(function(array $campaign) use ($map) {
-			$userId = $campaign['relationships']['creator']['data']['id'];
+		$creators = array_filter(array_map(function(array $campaign) use ($map) {
+			$userId = $campaign['relationships']['creator']['data']['id'] ?? null;
+			if (!$userId) return null;
 			$user = $map['user'][$userId];
 			return Creator::fromUserAndCampaign($user, $campaign);
-		}, $map['campaign']);
+		}, $map['campaign']));
 		$this->persistCreators($creators);
 	}
 

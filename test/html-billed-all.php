@@ -19,7 +19,8 @@ usort($allBills, fn($a, $b) => $b->time <=> $a->time);
 
 $activeTotals = [];
 foreach ($allBills as $bill) {
-	$activeTotals[$cid = $bill->creator->creatorId] ??= 0.0;
+	$cid = $bill->creator->creatorId ?? 0;
+	$activeTotals[$cid] ??= 0.0;
 	$activeTotals[$cid] += $bill->amount;
 }
 
@@ -68,7 +69,7 @@ a.inactive {
 		$seenCids = [];
 		$lastMonth = null;
 		foreach ($allBills as $bill):
-			$cid = $bill->creator->creatorId;
+			$cid = $bill->creator->creatorId ?? 0;
 			$month = date('Y-m', $bill->time);
 			$vanity = strtolower($bill->creator->vanity ?? sprintf('u:%s', $cid));
 			$active = isset($pledges[$cid]);
@@ -84,13 +85,13 @@ a.inactive {
 				</td>
 				<td>
 					<a href="#" data-filter-on="creator" class="<?= $active ? 'active' : 'inactive' ?>">
-						<?= html($bill->creator->campaignName) ?>
+						<?= html($bill->creator->campaignName ?? '???') ?>
 					</a>
 				</td>
-				<td><a href="<?= html($bill->creator->url) ?>" target="_blank">&#10132;</a></td>
-				<td><?= html(implode(', ', $fnftPatreons[$vanity] ?? []) ?: $bill->creator->creation) ?></td>
+				<td><a href="<?= html($bill->creator->url ?? '#') ?>" target="_blank">&#10132;</a></td>
+				<td><?= html(implode(', ', $fnftPatreons[$vanity] ?? []) ?: $bill->creator->creation ?? '???') ?></td>
 				<td align="right"><?= $bill->currency ?> <?= number_format($bill->amount, 2) ?></td>
-				<td align="right"><?= isset($seenCids[$cid]) ? '' : number_format($activeTotals[$cid] ?? 0, 2) ?></td>
+				<td align="right"><?= !$cid || isset($seenCids[$cid]) ? '' : number_format($activeTotals[$cid] ?? 0, 2) ?></td>
 			</tr>
 			<?
 			$seenCids[$cid] = true;
