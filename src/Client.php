@@ -162,8 +162,8 @@ class Client {
 
 		$bills = [];
 		foreach ($data['data'] as $bill) {
-			$campaignId = $bill['relationships']['campaign']['data']['id'];
-			$creator = $this->getCreatorFromCampaignId($campaignId);
+			$campaignId = $bill['relationships']['campaign']['data']['id'] ?? null;
+			$creator = $campaignId ? $this->getCreatorFromCampaignId($campaignId) : null;
 			$bill = Bill::fromCreatorAndBill($creator, $bill);
 			$bills[$bill->id] = $bill;
 		}
