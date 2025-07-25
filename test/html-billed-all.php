@@ -2,7 +2,11 @@
 
 require 'inc.bootstrap.php';
 
-$fnftPatreons = FNFT_PATREON_API_URL ? json_decode(file_get_contents(FNFT_PATREON_API_URL), true) : [];
+$fnftPatreons = [];
+if (FNFT_PATREON_API_URL) {
+	$client->_requests[] = 'GET ' . FNFT_PATREON_API_URL;
+	$fnftPatreons = json_decode(file_get_contents(FNFT_PATREON_API_URL), true);
+}
 
 $pledges = $client->getPledges();
 
@@ -71,7 +75,9 @@ a.inactive {
 		foreach ($allBills as $bill):
 			$cid = $bill->creator->creatorId ?? 0;
 			$month = date('Y-m', $bill->time);
-			$vanity = strtolower($bill->creator->vanity ?? sprintf('u:%s', $cid));
+			$fnftVanity = strtolower($bill->creator->vanity ?? '');
+			$fnftUid = sprintf('u:%s', $cid);
+			$creations = $fnftPatreons[$fnftVanity] ?? $fnftPatreons[$fnftUid] ?? [];
 			$active = isset($pledges[$cid]);
 			?>
 			<tr
@@ -89,7 +95,7 @@ a.inactive {
 					</a>
 				</td>
 				<td><a href="<?= html($bill->creator->url ?? '#') ?>" target="_blank">&#10132;</a></td>
-				<td><?= html(implode(', ', $fnftPatreons[$vanity] ?? []) ?: $bill->creator->creation ?? '???') ?></td>
+				<td><?= html(implode(', ', $creations) ?: $bill->creator->creation ?? '???') ?></td>
 				<td align="right"><?= $bill->currency ?> <?= number_format($bill->amount, 2) ?></td>
 				<td align="right"><?= !$cid || isset($seenCids[$cid]) ? '' : number_format($activeTotals[$cid] ?? 0, 2) ?></td>
 			</tr>
